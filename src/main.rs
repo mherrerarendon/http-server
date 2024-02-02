@@ -35,7 +35,19 @@ fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
         .ok_or(anyhow::anyhow!("Expected line separator"))?;
     let (_, path) = parse_start_line(start_line)?;
     let response_code = if path == "/" { "200" } else { "404" };
-    let response_str = format!("HTTP/1.1 {} OK\r\n\r\n", response_code);
+
+    let mut response: Vec<String> = Vec::new();
+    response.push(format!("HTTP/1.1 {} OK", response_code));
+    response.push("Content-Type: text/plain".to_string());
+    let (_, random_str_in_path) = path
+        .rsplit_once("/")
+        .ok_or(anyhow::anyhow!("Expected to find / delimiter"))?;
+    response.push(format!("Content-Length: {}", random_str_in_path.len()));
+    response.push("".to_string());
+    response.push(random_str_in_path.to_string());
+
+    let response_str = response.join("\r\n\r\n");
+    println!("response_str: {}", response_str);
 
     stream.write(response_str.as_bytes())?;
     Ok(())
