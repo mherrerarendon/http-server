@@ -6,15 +6,14 @@ pub struct HttpResponse {
 
 impl HttpResponse {
     pub fn serialize(&self) -> String {
-        let headers_str = if self.headers.len() > 0 {
+        let mut headers_str = if self.headers.len() > 0 {
             self.headers.join("\r\n")
         } else {
             "".to_string()
         };
-        format!(
-            "{}\r\n{}\r\n\r\n{}",
-            self.status_line, headers_str, self.body
-        )
+        headers_str.push_str("\r\n");
+
+        format!("{}\r\n{}\r\n{}", self.status_line, headers_str, self.body)
     }
 }
 
