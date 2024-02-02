@@ -11,7 +11,10 @@ impl HttpResponse {
         } else {
             "".to_string()
         };
-        format!("{}\r\n{}\r\n{}", self.status_line, headers_str, self.body)
+        format!(
+            "{}\r\n{}\r\n\r\n{}",
+            self.status_line, headers_str, self.body
+        )
     }
 }
 
