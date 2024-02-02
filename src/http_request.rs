@@ -5,7 +5,7 @@ use anyhow::Result;
 use crate::http_method::HttpMethod;
 
 pub struct HttpRequest {
-    method: HttpMethod,
+    _method: HttpMethod,
     pub path: String,
     pub headers: HashMap<String, String>,
 }
@@ -40,7 +40,7 @@ impl HttpRequest {
             .ok_or(anyhow::anyhow!("Expected line separator"))?;
         let (method, path) = Self::parse_start_line(start_line)?;
 
-        let headers: HashMap<String, String> = if !rest.starts_with("\r\n") {
+        let headers: HashMap<String, String> = if !rest.starts_with("\r\n\r\n") {
             rest.split("\r\n")
                 .map(|header| {
                     Self::parse_header(header)
@@ -54,7 +54,7 @@ impl HttpRequest {
         };
 
         Ok(Self {
-            method,
+            _method: method,
             path: path.to_string(),
             headers,
         })
