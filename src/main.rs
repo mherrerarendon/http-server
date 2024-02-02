@@ -48,7 +48,7 @@ fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     stream.read(&mut request_bytes)?;
     let request = std::str::from_utf8(&request_bytes)?;
     let (start_line, _) = request
-        .split_once("\r\n\r\n")
+        .split_once("\r\n")
         .ok_or(anyhow::anyhow!("Expected line separator"))?;
     let (_, path) = parse_start_line(start_line)?;
     let (response_code, response_text) = resolve_path(path);
