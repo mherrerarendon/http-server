@@ -58,10 +58,12 @@ fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     response
         .headers
         .push("Content-Type: text/plain".to_string());
-    response
-        .headers
-        .push(format!("Content-Length: {}", response_text.len()));
-    response.body = response_text.to_string();
+    if response_text.len() > 0 {
+        response
+            .headers
+            .push(format!("Content-Length: {}", response_text.len()));
+        response.body = response_text.to_string();
+    }
 
     let response_str = response.serialize();
     println!("response_str: {}", response_str);
