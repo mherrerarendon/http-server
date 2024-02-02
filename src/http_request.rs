@@ -40,7 +40,8 @@ impl HttpRequest {
             .ok_or(anyhow::anyhow!("Expected line separator"))?;
         let (method, path) = Self::parse_start_line(start_line)?;
 
-        let headers: HashMap<String, String> = if !rest.starts_with("\r\n\r\n") {
+        println!("rest: {}", rest);
+        let headers: HashMap<String, String> = if rest.trim() != "" {
             rest.split("\r\n")
                 .map(|header| {
                     Self::parse_header(header)
