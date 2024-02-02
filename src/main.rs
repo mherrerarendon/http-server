@@ -1,11 +1,11 @@
-mod my_http_response;
+mod http_response;
 
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
 };
 
-use crate::my_http_response::MyHttpResponse;
+use crate::http_response::HttpResponse;
 
 #[derive(Debug)]
 enum HttpMethod {
@@ -53,7 +53,7 @@ fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     let (_, path) = parse_start_line(start_line)?;
     let (response_code, response_text) = resolve_path(path);
 
-    let mut response = MyHttpResponse::default();
+    let mut response = HttpResponse::default();
     response.status_line = format!("HTTP/1.1 {} OK", response_code);
     response
         .headers
