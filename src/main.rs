@@ -37,7 +37,7 @@ fn resolve_path(path: &str) -> (String, String) {
         match path[1..].split_once("/") {
             Some(("echo", rest)) => ("200", rest),
             Some((_, _)) => ("404", ""),
-            None => todo!(),
+            None => ("404", ""),
         }
     };
     (r.0.to_string(), r.1.to_string())
