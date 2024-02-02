@@ -40,15 +40,18 @@ impl HttpRequest {
             .ok_or(anyhow::anyhow!("Expected line separator"))?;
         let (method, path) = Self::parse_start_line(start_line)?;
 
-        let headers: HashMap<String, String> = rest
-            .split("\r\n")
-            .map(|header| {
-                Self::parse_header(header)
-                    .and_then(|(key, val)| Ok((key.to_string(), val.to_string())))
-            })
-            .collect::<Result<Vec<(String, String)>>>()?
-            .into_iter()
-            .collect();
+        let headers: HashMap<String, String> = if !rest.starts_with("\r\n") {
+            rest.split("\r\n")
+                .map(|header| {
+                    Self::parse_header(header)
+                        .and_then(|(key, val)| Ok((key.to_string(), val.to_string())))
+                })
+                .collect::<Result<Vec<(String, String)>>>()?
+                .into_iter()
+                .collect()
+        } else {
+            HashMap::default()
+        };
 
         Ok(Self {
             method,
