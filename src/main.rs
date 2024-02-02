@@ -3,10 +3,41 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
-fn handle_connection(stream: &mut TcpStream) -> Result<(), anyhow::Error> {
-    let mut query_bytes = [0u8; 128];
-    stream.read(&mut query_bytes)?;
-    stream.write("HTTP/1.1 200 OK\r\n\r\n".as_bytes())?;
+#[derive(Debug)]
+enum HttpMethod {
+    GET,
+}
+
+fn parse_start_line(start_line: &str) -> Result<(HttpMethod, &str), anyhow::Error> {
+    let (verb, rest) = match start_line.split_once(" ") {
+        Some(("GET", rest)) => (HttpMethod::GET, rest),
+        Some((&_, _)) => todo!(),
+        None => todo!(),
+    };
+    println!("verb: {:?}", verb);
+
+    let (path, _) = rest
+        .split_once(" ")
+        .ok_or(anyhow::anyhow!("Expected space separator"))?;
+    println!("path: {}", path);
+
+    // TODO: parse remainder of start line
+
+    Ok((verb, path))
+}
+
+fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
+    let mut request_bytes = [0u8; 128];
+    stream.read(&mut request_bytes)?;
+    let request = std::str::from_utf8(&request_bytes)?;
+    let (start_line, _) = request
+        .split_once("\r\n\r\n")
+        .ok_or(anyhow::anyhow!("Expected line separator"))?;
+    let (_, path) = parse_start_line(start_line)?;
+    let response_code = if path == "/" { "200" } else { "404" };
+    let response_str = format!("HTTP/1.1 {} OK\r\n\r\n", response_code);
+
+    stream.write(response_str.as_bytes())?;
     Ok(())
 }
 
