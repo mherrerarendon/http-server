@@ -1,7 +1,11 @@
+mod http_response;
+
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
 };
+
+use crate::http_response::HttpResponse;
 
 #[derive(Debug)]
 enum HttpMethod {
@@ -49,14 +53,17 @@ fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     let (_, path) = parse_start_line(start_line)?;
     let (response_code, response_text) = resolve_path(path);
 
-    let mut response: Vec<String> = Vec::new();
-    response.push(format!("HTTP/1.1 {} OK", response_code));
-    response.push("Content-Type: text/plain".to_string());
-    response.push(format!("Content-Length: {}", response_text.len()));
-    response.push("".to_string());
-    response.push(response_text.to_string());
+    let mut response = HttpResponse::default();
+    response.status_line = format!("HTTP/1.1 {} OK", response_code);
+    response
+        .headers
+        .push("Content-Type: text/plain".to_string());
+    response
+        .headers
+        .push(format!("Content-Length: {}", response_text.len()));
+    response.body = response_text.to_string();
 
-    let response_str = response.join("\r\n\r\n");
+    let response_str = response.serialize();
     println!("response_str: {}", response_str);
 
     stream.write(response_str.as_bytes())?;
