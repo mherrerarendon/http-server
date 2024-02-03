@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
     let args: Vec<String> = env::args().collect();
-    let directory = &args[2];
+    let directory = if args.len() == 3 { &args[2] } else { "" };
     println!("directory: {}", directory);
 
     let listener = TcpListener::bind("127.0.0.1:4221").await?;
