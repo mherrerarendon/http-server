@@ -18,11 +18,13 @@ async fn main() -> anyhow::Result<()> {
 
     loop {
         match listener.accept().await {
-            Ok((ref mut stream, _)) => {
+            Ok((stream, _)) => {
                 println!("accepted new connection");
-                if let Err(err) = handle_connection(stream).await {
-                    println!("connection had error: {}", err)
-                }
+                tokio::spawn(async move {
+                    if let Err(err) = handle_connection(stream).await {
+                        println!("connection had error: {}", err)
+                    }
+                });
             }
             Err(e) => {
                 println!("error: {}", e);

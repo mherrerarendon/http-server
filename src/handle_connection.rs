@@ -5,7 +5,7 @@ use tokio::{
 
 use crate::{http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpDeserialize};
 
-async fn handle_root(stream: &mut TcpStream) -> anyhow::Result<()> {
+async fn handle_root(mut stream: TcpStream) -> anyhow::Result<()> {
     let response_str = HttpResponse::new_with_status(200).serialize();
     println!("response_str: {}", response_str);
 
@@ -13,7 +13,7 @@ async fn handle_root(stream: &mut TcpStream) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+async fn handle_echo(mut stream: TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
     let (_, response_text) = request.path[1..]
         .split_once("/")
         .ok_or(anyhow::anyhow!("Expected to find delimiter"))?;
@@ -33,7 +33,7 @@ async fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::R
     Ok(())
 }
 
-async fn handle_user_agent(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+async fn handle_user_agent(mut stream: TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
     let user_agent = request
         .headers
         .get("User-Agent")
@@ -54,7 +54,7 @@ async fn handle_user_agent(stream: &mut TcpStream, request: &HttpRequest) -> any
     Ok(())
 }
 
-async fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
+async fn handle_not_found(mut stream: TcpStream) -> anyhow::Result<()> {
     let response_str = HttpResponse::new_with_status(404).serialize();
     println!("response_str: {}", response_str);
 
@@ -62,7 +62,7 @@ async fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
+pub async fn handle_connection(mut stream: TcpStream) -> anyhow::Result<()> {
     println!("handling connection: {:?}", stream);
     let mut request_bytes = [0u8; 1000];
     let bytes_read = stream.read(&mut request_bytes).await?;
