@@ -16,16 +16,17 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = TcpListener::bind("127.0.0.1:4221").await?;
 
-    match listener.accept().await {
-        Ok((ref mut stream, _)) => {
-            println!("accepted new connection");
-            if let Err(err) = handle_connection(stream).await {
-                println!("connection had error: {}", err)
+    loop {
+        match listener.accept().await {
+            Ok((ref mut stream, _)) => {
+                println!("accepted new connection");
+                if let Err(err) = handle_connection(stream).await {
+                    println!("connection had error: {}", err)
+                }
+            }
+            Err(e) => {
+                println!("error: {}", e);
             }
         }
-        Err(e) => {
-            println!("error: {}", e);
-        }
     }
-    Ok(())
 }
