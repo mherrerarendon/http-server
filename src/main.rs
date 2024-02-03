@@ -1,7 +1,9 @@
 mod handle_connection;
+mod http_header;
 mod http_method;
 mod http_request;
 mod http_response;
+mod http_serde;
 
 use std::net::TcpListener;
 

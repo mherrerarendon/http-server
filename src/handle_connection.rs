@@ -3,7 +3,7 @@ use std::{
     net::TcpStream,
 };
 
-use crate::{http_request::HttpRequest, http_response::HttpResponse};
+use crate::{http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpDeserialize};
 
 fn handle_root(stream: &mut TcpStream) -> anyhow::Result<()> {
     let response_str = HttpResponse::new_with_status(200).serialize();
@@ -66,7 +66,8 @@ pub fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     let mut request_bytes = [0u8; 128];
     stream.read(&mut request_bytes)?;
 
-    let request = HttpRequest::parse(&request_bytes)?;
+    let request = std::str::from_utf8(&request_bytes)?;
+    let request = HttpRequest::http_deserialize(request)?;
     if request.path == "/" {
         handle_root(stream)?;
     } else if request.path.starts_with("/echo") {
