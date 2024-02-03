@@ -63,7 +63,8 @@ async fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
 }
 
 pub async fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
-    let mut request_bytes = [0u8; 128];
+    println!("handling connection: {:?}", stream);
+    let mut request_bytes = [0u8; 1000];
     let bytes_read = stream.read(&mut request_bytes).await?;
     println!("read {} bytes", bytes_read);
 
