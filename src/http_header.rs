@@ -1,7 +1,8 @@
 use anyhow::Result;
+use itertools::Itertools;
 use std::collections::HashMap;
 
-use crate::http_serde::HttpDeserialize;
+use crate::http_serde::{HttpDeserialize, HttpSerialize};
 
 pub struct HttpHeader {
     headers: HashMap<String, String>,
@@ -21,6 +22,19 @@ impl HttpHeader {
 
     pub fn get(&self, key: &str) -> Option<&String> {
         self.headers.get(key)
+    }
+
+    pub fn add(&mut self, key: &str, val: &str) {
+        self.headers.insert(key.to_string(), val.to_string());
+    }
+}
+
+impl HttpSerialize for HttpHeader {
+    fn http_serialize(&self) -> String {
+        self.headers
+            .iter()
+            .map(|(key, val)| format!("{key}: {val}\r\n"))
+            .join("")
     }
 }
 
@@ -54,6 +68,14 @@ impl From<HashMap<String, String>> for HttpHeader {
     }
 }
 
+impl Default for HttpHeader {
+    fn default() -> Self {
+        Self {
+            headers: HashMap::default(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -70,6 +92,34 @@ mod tests {
         let h =
             HttpHeader::http_deserialize(&"Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n")?;
         assert_eq!(h._count(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn it_serializes_header_section() -> anyhow::Result<()> {
+        let h: HttpHeader = HashMap::from(
+            [("Host", "localhost:4221"), ("User-Agent", "curl/7.64.1")]
+                .map(|(key, val)| (key.to_string(), val.to_string())),
+        )
+        .into();
+
+        // sanity check
+        assert_eq!(h._count(), 2);
+
+        let s = h.http_serialize();
+
+        // Since it starts out as a hashmap, the order is not determined
+        if s.starts_with("User-Agent") {
+            assert_eq!(
+                h.http_serialize(),
+                "User-Agent: curl/7.64.1\r\nHost: localhost:4221\r\n"
+            );
+        } else {
+            assert_eq!(
+                h.http_serialize(),
+                "Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n"
+            );
+        }
         Ok(())
     }
 }
