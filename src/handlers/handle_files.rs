@@ -21,12 +21,16 @@ pub async fn handle_files(
         let mut file = File::open(&abs_file_path).await?;
         let mut contents = vec![];
         file.read_to_end(&mut contents).await?;
+        let contents = String::from_utf8(contents)?;
 
         let mut response = HttpResponse::new_with_status(200);
         response
             .headers
             .add("Content-Type", "application/octet-stream");
-        response.body = String::from_utf8(contents)?;
+        response
+            .headers
+            .add("Content-Length", &contents.len().to_string());
+        response.body = contents;
 
         let response_str = response.http_serialize();
         println!("response_str: {}", response_str);
