@@ -1,19 +1,19 @@
-use std::{
-    io::{Read, Write},
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
 };
 
 use crate::{http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpDeserialize};
 
-fn handle_root(stream: &mut TcpStream) -> anyhow::Result<()> {
+async fn handle_root(stream: &mut TcpStream) -> anyhow::Result<()> {
     let response_str = HttpResponse::new_with_status(200).serialize();
     println!("response_str: {}", response_str);
 
-    stream.write(response_str.as_bytes())?;
+    stream.write_all(response_str.as_bytes()).await?;
     Ok(())
 }
 
-fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+async fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
     let (_, response_text) = request.path[1..]
         .split_once("/")
         .ok_or(anyhow::anyhow!("Expected to find delimiter"))?;
@@ -29,11 +29,11 @@ fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<
     let response_str = response.serialize();
     println!("response_str: {}", response_str);
 
-    stream.write(response_str.as_bytes())?;
+    stream.write_all(response_str.as_bytes()).await?;
     Ok(())
 }
 
-fn handle_user_agent(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+async fn handle_user_agent(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
     let user_agent = request
         .headers
         .get("User-Agent")
@@ -50,32 +50,32 @@ fn handle_user_agent(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::R
     let response_str = response.serialize();
     println!("response_str: {}", response_str);
 
-    stream.write(response_str.as_bytes())?;
+    stream.write_all(response_str.as_bytes()).await?;
     Ok(())
 }
 
-fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
+async fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
     let response_str = HttpResponse::new_with_status(404).serialize();
     println!("response_str: {}", response_str);
 
-    stream.write(response_str.as_bytes())?;
+    stream.write_all(response_str.as_bytes()).await?;
     Ok(())
 }
 
-pub fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
+pub async fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
     let mut request_bytes = [0u8; 128];
-    stream.read(&mut request_bytes)?;
+    stream.read(&mut request_bytes).await?;
 
     let request = std::str::from_utf8(&request_bytes)?;
     let request = HttpRequest::http_deserialize(request)?;
     if request.path == "/" {
-        handle_root(stream)?;
+        handle_root(stream).await?;
     } else if request.path.starts_with("/echo") {
-        handle_echo(stream, &request)?;
+        handle_echo(stream, &request).await?;
     } else if request.path.starts_with("/user-agent") {
-        handle_user_agent(stream, &request)?;
+        handle_user_agent(stream, &request).await?;
     } else {
-        handle_not_found(stream)?;
+        handle_not_found(stream).await?;
     };
 
     Ok(())
