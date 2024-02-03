@@ -68,6 +68,7 @@ pub async fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
 
     let request = std::str::from_utf8(&request_bytes)?;
     let request = HttpRequest::http_deserialize(request)?;
+    println!("handling for path: {}", request.path);
     if request.path == "/" {
         handle_root(stream).await?;
     } else if request.path.starts_with("/echo") {
