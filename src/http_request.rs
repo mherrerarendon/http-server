@@ -37,6 +37,10 @@ impl HttpDeserialize for HttpRequest {
             .ok_or(anyhow::anyhow!("Expected to find end of header section"))?;
         let header_str = &rest[..header_end];
         let body = &rest[(header_end + 4)..];
+        let body_end = body.find("\0").ok_or(anyhow::anyhow!(
+            "Expected to find terminating byte for body"
+        ))?;
+        let body = &body[..body_end];
 
         let headers = HttpHeader::http_deserialize(&header_str)?;
 
@@ -56,7 +60,7 @@ mod tests {
     #[test]
     fn it_deserializes() -> anyhow::Result<()> {
         let request_data =
-            "GET /echo/abc HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\nthis is body text";
+            "GET /echo/abc HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n\r\nthis is body text\0";
         let r = HttpRequest::http_deserialize(request_data)?;
         assert_eq!(r.method, HttpMethod::GET);
         assert_eq!(r.path, "/echo/abc");
