@@ -63,10 +63,13 @@ async fn handle_not_found(stream: &mut TcpStream) -> anyhow::Result<()> {
 }
 
 pub async fn handle_connection(stream: &mut TcpStream) -> anyhow::Result<()> {
-    let mut request_bytes = [0u8; 128];
-    stream.read(&mut request_bytes).await?;
+    // let mut request_bytes = [0u8; 128];
+    // stream.read(&mut request_bytes).await?;
 
-    let request = std::str::from_utf8(&request_bytes)?;
+    let mut buffer = Vec::new();
+    stream.read_to_end(&mut buffer).await?;
+
+    let request = std::str::from_utf8(&buffer)?;
     let request = HttpRequest::http_deserialize(request)?;
     println!("handling for path: {}", request.path);
     if request.path == "/" {
