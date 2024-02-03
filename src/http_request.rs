@@ -44,9 +44,15 @@ impl HttpRequest {
         println!("rest: {}", rest);
         let headers: HashMap<String, String> = if rest.trim() != "" {
             rest.split("\r\n")
-                .map(|header| {
-                    Self::parse_header(header)
-                        .and_then(|(key, val)| Ok((key.to_string(), val.to_string())))
+                .filter_map(|header| {
+                    if header.trim() == "" {
+                        None
+                    } else {
+                        Some(
+                            Self::parse_header(header)
+                                .and_then(|(key, val)| Ok((key.to_string(), val.to_string()))),
+                        )
+                    }
                 })
                 .collect::<Result<Vec<(String, String)>>>()?
                 .into_iter()
