@@ -10,7 +10,6 @@ pub struct HttpHeader {
 
 impl HttpHeader {
     fn parse_header(header_str: &str) -> anyhow::Result<(&str, &str)> {
-        println!("parsing header: {}", header_str);
         header_str
             .split_once(": ")
             .ok_or(anyhow::anyhow!("Expected to find header delimiter"))
