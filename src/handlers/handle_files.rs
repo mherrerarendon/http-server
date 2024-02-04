@@ -6,14 +6,14 @@ use tokio::{
     net::TcpStream,
 };
 
-use crate::{
+use crate::http::{
     http_method::HttpMethod, http_request::HttpRequest, http_response::HttpResponse,
     http_serde::HttpSerialize,
 };
 
 use super::handle_not_found::handle_not_found;
 
-async fn handle_files_get(mut stream: TcpStream, abs_file_path: &str) -> anyhow::Result<()> {
+async fn handle_files_get(stream: &mut TcpStream, abs_file_path: &str) -> anyhow::Result<()> {
     if Path::new(abs_file_path).exists() {
         let mut file = File::open(abs_file_path).await?;
         let mut contents = vec![];
@@ -40,7 +40,7 @@ async fn handle_files_get(mut stream: TcpStream, abs_file_path: &str) -> anyhow:
 }
 
 async fn handle_files_post(
-    mut stream: TcpStream,
+    stream: &mut TcpStream,
     request: &HttpRequest,
     abs_file_path: &str,
 ) -> anyhow::Result<()> {
@@ -56,7 +56,7 @@ async fn handle_files_post(
 }
 
 pub async fn handle_files(
-    stream: TcpStream,
+    stream: &mut TcpStream,
     request: &HttpRequest,
     dir: &str,
 ) -> anyhow::Result<()> {

@@ -1,23 +1,15 @@
-mod handlers;
-mod http_header;
-mod http_method;
-mod http_request;
-mod http_response;
-mod http_serde;
-
+use http_server_starter_rust::handlers::handle_connection;
 use std::env;
 
 use tokio::net::TcpListener;
 
-use crate::handlers::handle_connection;
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
     let args: Vec<String> = env::args().collect();
     let directory = if args.len() == 3 { &args[2] } else { "" };
 
     let listener = TcpListener::bind("127.0.0.1:4221").await?;
+    println!("Listening on 127.0.0.1:4221");
 
     loop {
         let directory = directory.to_string();

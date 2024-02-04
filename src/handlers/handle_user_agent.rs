@@ -1,8 +1,13 @@
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::{http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpSerialize};
+use crate::http::{
+    http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpSerialize,
+};
 
-pub async fn handle_user_agent(mut stream: TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+pub async fn handle_user_agent(
+    stream: &mut TcpStream,
+    request: &HttpRequest,
+) -> anyhow::Result<()> {
     let user_agent = request
         .headers
         .get("User-Agent")

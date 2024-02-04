@@ -1,8 +1,10 @@
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::{http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpSerialize};
+use crate::http::{
+    http_request::HttpRequest, http_response::HttpResponse, http_serde::HttpSerialize,
+};
 
-pub async fn handle_echo(mut stream: TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
+pub async fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyhow::Result<()> {
     let (_, response_text) = request.path[1..]
         .split_once("/")
         .ok_or(anyhow::anyhow!("Expected to find delimiter"))?;
