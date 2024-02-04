@@ -39,7 +39,6 @@ impl HttpSerialize for HttpHeader {
 
 impl HttpDeserialize for HttpHeader {
     fn http_deserialize(data: &str) -> Result<Self> {
-        println!("header str: {}", data);
         let headers: HashMap<String, String> = if data.trim() != "" {
             data.split("\r\n")
                 .filter_map(|header| {

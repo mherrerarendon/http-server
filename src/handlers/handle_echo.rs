@@ -16,7 +16,7 @@ pub async fn handle_echo(stream: &mut TcpStream, request: &HttpRequest) -> anyho
     response.body = response_text.to_string();
 
     let response_str = response.http_serialize();
-    println!("response_str: {}", response_str);
+    println!("{}\n//////////////////", response_str);
 
     stream.write_all(response_str.as_bytes()).await?;
     Ok(())

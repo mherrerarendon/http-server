@@ -5,7 +5,11 @@ pub mod handle_root;
 pub mod handle_user_agent;
 
 use crate::http::{http_request::HttpRequest, http_serde::HttpDeserialize};
-use tokio::{io::AsyncReadExt, net::TcpStream, time::timeout};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+    time::timeout,
+};
 
 async fn _read_until_null(stream: &mut TcpStream) -> anyhow::Result<Vec<u8>> {
     const BUFF_SIZE: usize = 5;
@@ -31,7 +35,11 @@ pub async fn handle_connection(mut stream: TcpStream, dir: String) -> anyhow::Re
         };
         match bytes_read {
             None => {
-                println!("Stream timed out after {} seconds", my_duration.as_secs());
+                println!(
+                    "Stream timed out after {} milli seconds",
+                    my_duration.as_millis()
+                );
+                stream.shutdown().await?;
                 break;
             }
             Some(bytes_read) => {
@@ -43,7 +51,7 @@ pub async fn handle_connection(mut stream: TcpStream, dir: String) -> anyhow::Re
             }
         };
         let request = std::str::from_utf8(&request_bytes)?;
-        println!("request:\n{}", request);
+        println!("{}", request);
         let request = HttpRequest::http_deserialize(request)?;
         if request.path == "/" {
             handle_root::handle_root(&mut stream).await?;
