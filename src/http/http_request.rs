@@ -54,10 +54,10 @@ impl HttpDeserialize for HttpRequest {
         let body = match header_end {
             Some(header_end) => {
                 let body = &rest[(header_end + 4)..];
-                let body_end = body.find("\0").ok_or(anyhow::anyhow!(
-                    "Expected to find terminating byte for body"
-                ))?;
-                &body[..body_end]
+                match body.find("\0") {
+                    Some(body_end) => &body[..body_end],
+                    None => body,
+                }
             }
             None => "",
         };
@@ -110,6 +110,18 @@ mod tests {
         assert_eq!(r.headers.get("Host").unwrap(), "localhost:4221");
         assert_eq!(r.headers.get("User-Agent").unwrap(), "curl/7.64.1");
         assert_eq!(r.body, "this is body text");
+        Ok(())
+    }
+
+    #[test]
+    fn it_deserializes_request_with_headers_and_no_body() -> anyhow::Result<()> {
+        let request_data = "GET /somepath HTTP/1.1\r\nHost: localhost:4221\r\n\r\n";
+        let r = HttpRequest::http_deserialize(request_data)?;
+        assert_eq!(r.method, HttpMethod::GET);
+        assert_eq!(r.path, "/somepath");
+        assert_eq!(r.headers._count(), 1);
+        assert_eq!(r.headers.get("Host").unwrap(), "localhost:4221");
+        assert_eq!(r.body, "");
         Ok(())
     }
 
