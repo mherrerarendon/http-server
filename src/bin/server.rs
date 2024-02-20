@@ -1,30 +1,16 @@
-use http_server_starter_rust::handlers::handle_connection;
-use std::env;
-
-use tokio::net::TcpListener;
+use futures::FutureExt;
+use http_server_starter_rust::{
+    handlers::handle_echo::handle_echo_again, http::http_response::HttpResponse, server::Server,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let directory = if args.len() == 3 { &args[2] } else { "" };
+    let mut server = Server::new();
 
-    let listener = TcpListener::bind("127.0.0.1:4221").await?;
-    println!("Listening on 127.0.0.1:4221");
+    server.add_handler(r"/", |_| {
+        async move { Ok(HttpResponse::new_with_status(201)) }.boxed()
+    })?;
+    server.add_handler(r"/echo", |request| handle_echo_again(request).boxed())?;
 
-    loop {
-        let directory = directory.to_string();
-        match listener.accept().await {
-            Ok((stream, _)) => {
-                println!("accepted new connection");
-                tokio::spawn(async move {
-                    if let Err(err) = handle_connection(stream, directory).await {
-                        println!("connection had error: {}", err)
-                    }
-                });
-            }
-            Err(e) => {
-                println!("error: {}", e);
-            }
-        }
-    }
+    server.accept_requests().await
 }
