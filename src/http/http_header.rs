@@ -2,7 +2,7 @@ use anyhow::Result;
 use itertools::Itertools;
 use std::collections::HashMap;
 
-use crate::http_serde::{HttpDeserialize, HttpSerialize};
+use super::http_serde::{HttpDeserialize, HttpSerialize};
 
 pub struct HttpHeader {
     headers: HashMap<String, String>,
@@ -61,9 +61,14 @@ impl HttpDeserialize for HttpHeader {
     }
 }
 
-impl From<HashMap<String, String>> for HttpHeader {
-    fn from(headers: HashMap<String, String>) -> Self {
-        Self { headers }
+impl<S: AsRef<str>> From<HashMap<S, S>> for HttpHeader {
+    fn from(h: HashMap<S, S>) -> Self {
+        Self {
+            headers: h
+                .iter()
+                .map(|(k, v)| (k.as_ref().to_string(), v.as_ref().to_string()))
+                .collect(),
+        }
     }
 }
 
