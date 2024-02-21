@@ -23,6 +23,14 @@ struct ServerInner {
     debug: bool,
 }
 
+impl ServerInner {
+    fn log(&self, msg: &str) {
+        if self.debug {
+            println!("{}", msg);
+        }
+    }
+}
+
 impl Default for ServerInner {
     fn default() -> Self {
         Self {
@@ -62,7 +70,7 @@ impl Server {
             let i = inner.clone();
             match listener.accept().await {
                 Ok((stream, _)) => {
-                    println!("accepted new connection");
+                    i.log("accepted new connection");
                     tokio::spawn(async move {
                         if let Err(err) = Server::handle_connection(stream, i).await {
                             println!("connection had error: {}", err)
@@ -84,19 +92,19 @@ impl Server {
             let i = server_inner.clone();
             if let Ok(request_bytes) = read_from_stream_until_null(&mut stream).await {
                 if request_bytes.len() == 0 {
-                    println!("Client closed connection");
+                    server_inner.log("Client closed connection");
                     break;
                 }
                 let request = std::str::from_utf8(&request_bytes)?;
-                println!("{}", request);
+                server_inner.log(request);
                 let request = HttpRequest::http_deserialize(request)?;
                 let response = Server::handle_request(&request, i).await?;
                 let response_str = response.http_serialize();
-                println!("response_str: {}", response_str);
+                server_inner.log(&format!("response_str: {}", response_str));
 
                 stream.write_all(response_str.as_bytes()).await?;
             } else {
-                println!("Stream timed out");
+                server_inner.log("Stream timed out");
                 stream.shutdown().await?;
                 break;
             }
