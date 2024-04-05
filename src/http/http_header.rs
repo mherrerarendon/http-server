@@ -1,6 +1,6 @@
 use anyhow::Result;
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Write};
 
 use super::http_serde::{HttpDeserialize, HttpSerialize};
 
@@ -29,11 +29,16 @@ impl HttpHeader {
 }
 
 impl HttpSerialize for HttpHeader {
-    fn http_serialize(&self) -> String {
-        self.headers
-            .iter()
-            .map(|(key, val)| format!("{key}: {val}\r\n"))
-            .join("")
+    fn http_serialize<W: Write>(&self, w: &mut W) -> anyhow::Result<()> {
+        write!(
+            w,
+            "{}",
+            self.headers
+                .iter()
+                .map(|(key, val)| format!("{key}: {val}\r\n"))
+                .join("")
+        )?;
+        Ok(())
     }
 }
 
@@ -110,19 +115,16 @@ mod tests {
         // sanity check
         assert_eq!(h._count(), 2);
 
-        let s = h.http_serialize();
+        let mut s = Vec::new();
+
+        h.http_serialize(&mut s)?;
+        let s = String::from_utf8(s)?;
 
         // Since it starts out as a hashmap, the order is not determined
         if s.starts_with("User-Agent") {
-            assert_eq!(
-                h.http_serialize(),
-                "User-Agent: curl/7.64.1\r\nHost: localhost:4221\r\n"
-            );
+            assert_eq!(s, "User-Agent: curl/7.64.1\r\nHost: localhost:4221\r\n");
         } else {
-            assert_eq!(
-                h.http_serialize(),
-                "Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n"
-            );
+            assert_eq!(s, "Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n");
         }
         Ok(())
     }

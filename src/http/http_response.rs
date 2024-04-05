@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use super::{http_header::HttpHeader, http_serde::HttpSerialize};
 
 pub struct HttpResponse {
@@ -16,10 +18,11 @@ impl HttpResponse {
 }
 
 impl HttpSerialize for HttpResponse {
-    fn http_serialize(&self) -> String {
-        let status_line = format!("HTTP/1.1 {} OK", self.status);
-        let headers_str = self.headers.http_serialize();
-        format!("{}\r\n{}\r\n{}", status_line, headers_str, self.body)
+    fn http_serialize<W: Write>(&self, w: &mut W) -> anyhow::Result<()> {
+        write!(w, "HTTP/1.1 {} OK\r\n", self.status)?;
+        self.headers.http_serialize(w)?;
+        write!(w, "\r\n{}", self.body)?;
+        Ok(())
     }
 }
 
@@ -36,11 +39,13 @@ impl Default for HttpResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::http::http_serde::test_utils::serialize_to_str;
 
     #[test]
-    fn it_serializes_response_with_no_header() {
+    fn it_serializes_response_with_no_header() -> anyhow::Result<()> {
         let r = HttpResponse::new_with_status(200);
-        assert_eq!(r.http_serialize(), "HTTP/1.1 200 OK\r\n\r\n")
+        assert_eq!(serialize_to_str!(r), "HTTP/1.1 200 OK\r\n\r\n");
+        Ok(())
     }
 
     #[test]
@@ -48,7 +53,7 @@ mod tests {
         let mut r = HttpResponse::new_with_status(200);
         r.headers.add("Host", "localhost:4221");
         assert_eq!(
-            r.http_serialize(),
+            serialize_to_str!(r),
             "HTTP/1.1 200 OK\r\nHost: localhost:4221\r\n\r\n"
         )
     }

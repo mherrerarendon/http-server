@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use anyhow::Result;
 
 use super::{
@@ -31,10 +33,11 @@ impl HttpRequest {
 }
 
 impl HttpSerialize for HttpRequest {
-    fn http_serialize(&self) -> String {
-        let s = format!("{} {} HTTP/1.1", self.method, self.path);
-        let headers_str = self.headers.http_serialize();
-        format!("{}\r\n{}\r\n{}", s, headers_str, self.body)
+    fn http_serialize<W: Write>(&self, w: &mut W) -> anyhow::Result<()> {
+        write!(w, "{} {} HTTP/1.1\r\n", self.method, self.path)?;
+        self.headers.http_serialize(w)?;
+        write!(w, "\r\n{}", self.body)?;
+        Ok(())
     }
 }
 
@@ -86,6 +89,8 @@ impl Default for HttpRequest {
 mod tests {
     use std::collections::HashMap;
 
+    use crate::http::http_serde::test_utils::serialize_to_str;
+
     use super::*;
 
     #[test]
@@ -128,7 +133,7 @@ mod tests {
     #[test]
     fn it_serializes_default_request() -> anyhow::Result<()> {
         let r = HttpRequest::default();
-        assert_eq!(r.http_serialize(), "GET / HTTP/1.1\r\n\r\n");
+        assert_eq!(serialize_to_str!(r), "GET / HTTP/1.1\r\n\r\n");
         Ok(())
     }
 
@@ -140,7 +145,7 @@ mod tests {
             ..HttpRequest::default()
         };
         assert_eq!(
-            r.http_serialize(),
+            serialize_to_str!(r),
             "GET /somepath HTTP/1.1\r\nHost: localhost:4221\r\n\r\n"
         );
         Ok(())
