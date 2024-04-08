@@ -1,11 +1,11 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 
 pub trait HttpSerialize {
     fn http_serialize<W: Write>(&self, w: &mut W) -> anyhow::Result<()>;
 }
 
 pub trait HttpDeserialize: Sized {
-    fn http_deserialize(data: &str) -> anyhow::Result<Self>;
+    fn http_deserialize<R: BufRead>(r: &mut R) -> anyhow::Result<Self>;
 }
 
 #[cfg(test)]
@@ -18,5 +18,14 @@ pub mod test_utils {
         }};
     }
 
+    macro_rules! deserialize_from_str {
+        ($read_content:expr => $deserializable:ty ) => {{
+            use std::io::Cursor;
+            let mut r = Cursor::new(String::from($read_content));
+            <$deserializable>::http_deserialize(&mut r)?
+        }};
+    }
+
+    pub(crate) use deserialize_from_str;
     pub(crate) use serialize_to_str;
 }

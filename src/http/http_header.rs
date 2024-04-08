@@ -1,6 +1,9 @@
 use anyhow::Result;
 use itertools::Itertools;
-use std::{collections::HashMap, io::Write};
+use std::{
+    collections::HashMap,
+    io::{BufRead, Write},
+};
 
 use super::http_serde::{HttpDeserialize, HttpSerialize};
 
@@ -26,6 +29,12 @@ impl HttpHeader {
     pub fn add(&mut self, key: &str, val: &str) {
         self.headers.insert(key.to_string(), val.to_string());
     }
+
+    fn add_from_line(&mut self, header_line: &str) -> anyhow::Result<()> {
+        let (key, val) = HttpHeader::parse_header(header_line)?;
+        self.headers.insert(key.to_string(), val.to_string());
+        Ok(())
+    }
 }
 
 impl HttpSerialize for HttpHeader {
@@ -43,26 +52,18 @@ impl HttpSerialize for HttpHeader {
 }
 
 impl HttpDeserialize for HttpHeader {
-    fn http_deserialize(data: &str) -> Result<Self> {
-        let headers: HashMap<String, String> = if data.trim() != "" {
-            data.split("\r\n")
-                .filter_map(|header| {
-                    if header.trim() == "" {
-                        None
-                    } else {
-                        Some(
-                            Self::parse_header(header)
-                                .and_then(|(key, val)| Ok((key.to_string(), val.to_string()))),
-                        )
-                    }
-                })
-                .collect::<Result<Vec<(String, String)>>>()?
-                .into_iter()
-                .collect()
-        } else {
-            HashMap::default()
-        };
-        Ok(headers.into())
+    fn http_deserialize<R: BufRead>(r: &mut R) -> Result<Self> {
+        let mut headers = HttpHeader::default();
+        let mut buf = String::new();
+        while let Ok(_) = r.read_line(&mut buf) {
+            let s = buf.trim();
+            if s.is_empty() {
+                break;
+            }
+            headers.add_from_line(s)?;
+            buf.clear();
+        }
+        Ok(headers)
     }
 }
 
@@ -87,19 +88,20 @@ impl Default for HttpHeader {
 
 #[cfg(test)]
 mod tests {
+    use crate::http::http_serde::test_utils::deserialize_from_str;
+
     use super::*;
 
     #[test]
     fn it_deserializes_empty_header_section() -> anyhow::Result<()> {
-        let h = HttpHeader::http_deserialize(&"")?;
+        let h = deserialize_from_str!("" => HttpHeader);
         assert_eq!(h._count(), 0);
         Ok(())
     }
 
     #[test]
     fn it_deserializes_header_section() -> anyhow::Result<()> {
-        let h =
-            HttpHeader::http_deserialize(&"Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n")?;
+        let h = deserialize_from_str!("Host: localhost:4221\r\nUser-Agent: curl/7.64.1\r\n" => HttpHeader);
         assert_eq!(h._count(), 2);
         Ok(())
     }

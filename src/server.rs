@@ -1,9 +1,9 @@
-use std::{future::IntoFuture, sync::Arc};
+use std::{future::IntoFuture, io::Cursor, sync::Arc};
 
 use anyhow::Context;
 use regex::Regex;
 use tokio::{
-    io::{split, AsyncBufReadExt, AsyncWriteExt, BufReader},
+    io::{split, AsyncBufReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
     time::{timeout, Duration},
 };
@@ -88,7 +88,7 @@ impl Server {
         server_inner: Arc<ServerInner>,
     ) -> anyhow::Result<()> {
         let (reader, mut writer) = split(stream);
-        let mut buf_reader = BufReader::new(reader);
+        let mut buf_reader = tokio::io::BufReader::new(reader);
         let mut buf = Vec::new();
         const TIMEOUT_DUR: Duration = Duration::from_millis(500);
 
@@ -106,7 +106,8 @@ impl Server {
             }
             let request = std::str::from_utf8(&buf)?;
             server_inner.log(request);
-            let request = HttpRequest::http_deserialize(request)?;
+            let mut request_reader = Cursor::new(request);
+            let request = HttpRequest::http_deserialize(&mut request_reader)?;
             let response = Server::handle_request(&request, i).await?;
             response.http_serialize(&mut bytes)?;
 
